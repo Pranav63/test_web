@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farmer's Fun Gallery</title>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script
+      src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <label class="switch">
+      <input type="checkbox" id="darkModeToggle">
+      <span class="slider round"></span>
+    </label>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+
+      :root {
+        --primary-color: #4CAF50;
+        --secondary-color: #FFA000;
+        --background-color: #f5f7fa;
+        --text-color: #34495e;
+        --card-background: #ffffff;
+      }
+
+      .dark-mode {
+        --primary-color: #66BB6A;
+        --secondary-color: #FFB300;
+        --background-color: #1E1E1E;
+        --text-color: #E0E0E0;
+        --card-background: #2D2D2D;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        line-height: 1.6;
+        transition: background-color 0.3s, color 0.3s;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 2rem;
+        font-weight: 600;
+        color: var(--primary-color);
+      }
+
+      input,
+      button,
+      .custom-file-upload {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background-color: var(--card-background);
+        color: var(--text-color);
+      }
+
+      button,
+      .custom-file-upload {
+        background-color: var(--primary-color);
+        color: white;
+        cursor: pointer;
+        border: none;
+      }
+
+      button:hover,
+      .custom-file-upload:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      #gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+
+      .image-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+        background-color: var(--card-background);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .image-container:hover {
+        transform: translateY(-5px);
+      }
+
+      .image-container img {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+        transition: filter 0.3s ease;
+      }
+
+      .image-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .image-container:hover .image-overlay {
+        opacity: 1;
+      }
+
+      .image-overlay span {
+        color: white;
+        font-size: 1rem;
+      }
+
+      .login-container,
+      .app-container {
+        display: none;
+        background-color: var(--card-background);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .active {
+        display: block;
+      }
+
+      #userDisplay {
+        font-weight: 600;
+        color: var(--primary-color);
+      }
+
+      #logout {
+        background-color: #e74c3c;
+        padding: 0.25rem 0.5rem;
+        /* Reduced padding */
+        font-size: 0.75rem;
+        /* Smaller font size */
+        width: 14%;
+        /* Ensures the button size is just large enough to fit its content */
+        margin-left: 1rem;
+        height: 100%;
+      }
+
+      #imageInput {
+        display: none;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        margin-top: 1rem;
+      }
+
+      .loading::after {
+        content: '';
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        border: 3px solid var(--primary-color);
+        border-radius: 50%;
+        border-top: 3px solid var(--background-color);
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .empty-gallery {
+        text-align: center;
+        margin-top: 2rem;
+        font-style: italic;
+        color: #95a5a6;
+      }
+
+      .lightbox {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        justify-content: center;
+        align-items: center;
+      }
+
+      .lightbox img {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        border-radius: 8px;
+      }
+
+      .close-lightbox {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 30px;
+        cursor: pointer;
+      }
+
+      .user-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+
+      .upload-container {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .upload-container .custom-file-upload,
+      .upload-container button {
+        flex: 1;
+      }
+
+      #darkModeToggle {
+        background-color: var(--secondary-color);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      #darkModeToggle:hover {
+        opacity: 0.9;
+      }
+
+      .switch {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+        z-index: 1000;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+      }
+
+      input:checked+.slider {
+        background-color: #2196F3;
+      }
+
+      input:focus+.slider {
+        box-shadow: 0 0 1px #2196F3;
+      }
+
+      input:checked+.slider:before {
+        transform: translateX(26px);
+      }
+
+      .slider.round {
+        border-radius: 34px;
+      }
+
+      .slider.round:before {
+        border-radius: 50%;
+      }
+
+      #farmerFunContainer {
+        margin-top: 2rem;
+        padding: 1rem;
+        background-color: var(--card-background);
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .delete-button {
+        position: absolute;
+        top: 10px;
+        right: 3px;
+        background-color: rgba(231, 76, 60, 0.8);
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        z-index: 10;
+      }
+
+      .delete-button:hover {
+        background-color: rgba(231, 76, 60, 1);
+      }
+          #fullpage {
+      display: none;
+      position: absolute;
+      z-index: 9999;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-size: contain;
+      background-repeat: no-repeat no-repeat;
+      background-position: center center;
+      background-color: black;
+    }
+
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div id="loginContainer" class="login-container active">
+        <h1>Welcome to Farmer's Fun Gallery</h1>
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button onclick="login()">Login</button>
+      </div>
+
+      <div id="appContainer" class="app-container">
+        <h1>Your Farmer's Fun Gallery</h1>
+        <div class="user-info">
+          <p>Welcome, <span id="userDisplay"></span>!</p>
+          <button id="logout" onclick="logout()">Logout</button>
+        </div>
+        <div class="upload-container">
+          <input type="file" id="imageInput" accept="image/*" multiple>
+          <label for="imageInput" class="custom-file-upload">Choose
+            Images</label>
+          <button onclick="uploadImages()">Upload Images</button>
+        </div>
+        <!-- <button id="darkModeToggle" onclick="toggleDarkMode()">Toggle Dark Mode</button> -->
+        <div class="loading" id="loadingIndicator"></div>
+        <div id="gallery"></div>
+        <div class="empty-gallery" id="emptyGallery">Your gallery is empty.
+          Upload some images to get started!</div>
+        <div id="farmerFunContainer"></div>
+      </div>
+    </div>
+
+    <div id="lightbox" class="lightbox">
+      <span class="close-lightbox" onclick="closeLightbox()">&times;</span>
+      <img id="lightboxImage" src="" alt="Lightbox image">
+    </div>
+
+    <script type="text/babel">
+      const FarmerFunComponent = () => {
+        const [weather, setWeather] = React.useState('sunny');
+        const [crop, setCrop] = React.useState('corn');
+
+        const weatherEmojis = {
+          sunny: '☀️',
+          rainy: '🌧️',
+          cloudy: '☁️',
+          snowy: '❄️'
+        };
+
+        const cropEmojis = {
+          corn: '🌽',
+          wheat: '🌾',
+          potato: '🥔',
+          tomato: '🍅'
+        };
+
+        const changeWeather = () => {
+          const weathers = Object.keys(weatherEmojis);
+          const newWeather = weathers[(weathers.indexOf(weather) + 1) % weathers.length];
+          setWeather(newWeather);
+        };
+
+        const changeCrop = () => {
+          const crops = Object.keys(cropEmojis);
+          const newCrop = crops[(crops.indexOf(crop) + 1) % crops.length];
+          setCrop(newCrop);
+        };
+
+        return (
+          <div style={{ textAlign: 'center' }}>
+            <h2>Farmer's Fun Corner</h2>
+            <p style={{ fontSize: '3rem' }}>
+              {weatherEmojis[weather]} {cropEmojis[crop]}
+            </p>
+            <button onClick={changeWeather} style={{ marginRight: '10px' }}>Change Weather</button>
+            <button onClick={changeCrop}>Change Crop</button>
+          </div>
+        );
+      };
+
+      ReactDOM.render(<FarmerFunComponent />, document.getElementById('farmerFunContainer'));
+    </script>
+
+    <script>
+      let currentUser = null;
+      let isDarkMode = false;
+
+      function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        if (username && password) {
+          currentUser = username;
+          document.getElementById('loginContainer').classList.remove('active');
+          document.getElementById('appContainer').classList.add('active');
+          document.getElementById('userDisplay').textContent = username;
+          displayImages();
+        } else {
+          alert('Please enter both username and password');
+        }
+      }
+
+      function logout() {
+        currentUser = null;
+        document.getElementById('loginContainer').classList.add('active');
+        document.getElementById('appContainer').classList.remove('active');
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+      }
+
+      function uploadImages() {
+        const input = document.getElementById('imageInput');
+        const files = input.files;
+        if (files.length === 0) {
+          alert('Please select images to upload');
+          return;
+        }
+
+        document.getElementById('loadingIndicator').style.display = 'block';
+
+        let uploaded = 0;
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const reader = new FileReader();
+
+          reader.onload = function (e) {
+            const imageData = e.target.result;
+            const images = JSON.parse(localStorage.getItem(currentUser + '_images') || '[]');
+            images.push(imageData);
+            localStorage.setItem(currentUser + '_images', JSON.stringify(images));
+            uploaded++;
+            if (uploaded === files.length) {
+              displayImages();
+              document.getElementById('loadingIndicator').style.display = 'none';
+            }
+          };
+
+          reader.readAsDataURL(file);
+        }
+      }
+      function openLightbox(imageSrc) {
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImage = document.getElementById('lightboxImage');
+        lightboxImage.src = imageSrc;
+        lightbox.style.display = 'flex';
+      }
+
+      // Function to close the lightbox
+      function closeLightbox() {
+        const lightbox = document.getElementById('lightbox');
+        lightbox.style.display = 'none';
+      }
+            // Event listener for the close button and outside click
+      document.getElementById('lightbox').addEventListener('click', function (event) {
+        if (event.target === this || event.target.classList.contains('close-lightbox')) {
+          closeLightbox();
+        }
+      });
+      function displayImages() {
+        const gallery = document.getElementById('gallery');
+        const emptyGallery = document.getElementById('emptyGallery');
+        gallery.innerHTML = '';
+        const images = JSON.parse(localStorage.getItem(currentUser + '_images') || '[]');
+
+        if (images.length === 0) {
+          emptyGallery.style.display = 'block';
+        } else {
+          emptyGallery.style.display = 'none';
+          images.forEach((imageData, index) => {
+            const container = document.createElement('div');
+            container.className = 'image-container';
+
+            const img = document.createElement('img');
+            const fullPage = document.querySelector('#fullpage');
+            img.src = imageData;
+            img.alt = `Image ${index + 1}`;
+            
+            img.onclick = () => openLightbox(imageData);  // Call openLightbox on click
+            container.appendChild(img);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'image-overlay';
+            const text = document.createElement('span');
+            text.textContent = `Image ${index + 1}`;
+            overlay.appendChild(text);
+            container.appendChild(overlay);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-button';
+            deleteButton.textContent = 'Delete';
+            deleteButton.onclick = (event) => {
+              event.stopPropagation();
+              deleteImage(index);
+            };
+            container.appendChild(deleteButton);
+
+            gallery.appendChild(container);
+          });
+        }
+      }
+
+
+
+
+
+      function toggleDarkMode() {
+        isDarkMode = !isDarkMode;
+        document.body.classList.toggle('dark-mode', isDarkMode);
+        const button = document.getElementById('darkModeToggle');
+        button.textContent = isDarkMode ? 'Toggle Light Mode' : 'Toggle Dark Mode';
+      }
+
+      // Event listener for file input change
+      document.getElementById('imageInput').addEventListener('change', function (event) {
+        const fileCount = event.target.files.length;
+        const label = document.querySelector('.custom-file-upload');
+        label.textContent = fileCount > 1 ? `${fileCount} files selected` : `1 file selected`;
+      });
+
+      // Close lightbox when clicking outside the image
+      document.getElementById('lightbox').addEventListener('click', function (event) {
+        if (event.target === this) {
+          closeLightbox();
+        }
+      });
+
+      // Add some farmer-friendly messages
+      const farmerMessages = [
+        "Time to harvest some memories!",
+        "Your gallery is growing like a well-tended crop!",
+        "These images are as fresh as morning dew!",
+        "Your photos are ripe for the picking!",
+        "Looks like you've got a bumper crop of images!"
+      ];
+      // Function to delete image
+      function deleteImage(index) {
+        const images = JSON.parse(localStorage.getItem(currentUser + '_images') || '[]');
+        if (index > -1) {
+          images.splice(index, 1);
+        }
+        localStorage.setItem(currentUser + '_images', JSON.stringify(images));
+        displayImages();
+      }
+      function displayRandomFarmerMessage() {
+        const messageContainer = document.createElement('div');
+        messageContainer.style.textAlign = 'center';
+        messageContainer.style.marginTop = '1rem';
+        messageContainer.style.fontStyle = 'italic';
+        messageContainer.textContent = farmerMessages[Math.floor(Math.random() * farmerMessages.length)];
+        document.querySelector('.app-container').appendChild(messageContainer);
+      }
+
+      // Display a random farmer message when logging in
+      document.querySelector('button[onclick="login()"]').addEventListener('click', displayRandomFarmerMessage);
+      document.getElementById('darkModeToggle').addEventListener('change', function () {
+      document.body.classList.toggle('dark-mode', this.checked);});
+    </script>
+  </body>
+
+</html>
